@@ -4,7 +4,13 @@ server:
     connection-timeout: 2s
     idle-timeout: 15s
   shutdown: graceful
+
 spring:
+  session:
+    store-type: redis
+    timeout: 10m
+    redis:
+      namespace: polar:edge
   application:
     name: edge-service
   lifecycle:
@@ -17,6 +23,7 @@ spring:
   cloud:
     gateway:
       default-filters:
+        - SaveSession
         - name: RequestRateLimiter
           args:
             redis-rate-limiter:
