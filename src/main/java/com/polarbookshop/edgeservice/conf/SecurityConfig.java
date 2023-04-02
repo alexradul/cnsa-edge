@@ -11,6 +11,10 @@ import org.springframework.security.oauth2.client.registration.ReactiveClientReg
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
+import org.springframework.security.web.server.csrf.CookieServerCsrfTokenRepository;
+import org.springframework.security.web.server.csrf.CsrfToken;
+import org.springframework.web.server.WebFilter;
+import reactor.core.publisher.Mono;
 
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -33,7 +37,23 @@ public class SecurityConfig {
                 .oauth2Login(Customizer.withDefaults())
                 .logout(logout -> logout.logoutSuccessHandler(
                         oidcLogoutSuccessHandler(clientRegistrationRepository)))
+                // Use a cookie-based strategy for exchanging CSRF tokens with the Angular frontend
+                .csrf(csrf -> csrf.csrfTokenRepository(
+                        CookieServerCsrfTokenRepository.withHttpOnlyFalse()))
                 .build();
+    }
+
+    /* A filter with the only purpose of subscribing to the CsrfToken reactive stream and ensuring its value is extracted correctly */
+    @Bean
+    WebFilter csrfWebFilter() {
+        return (exchange, chain) -> {
+            exchange.getResponse().beforeCommit(() -> Mono.defer(() -> {
+                Mono<CsrfToken> csrfToken =
+                        exchange.getAttribute(CsrfToken.class.getName());
+                return csrfToken != null ? csrfToken.then() : Mono.empty();
+            }));
+            return chain.filter(exchange);
+        };
     }
 
     private ServerLogoutSuccessHandler oidcLogoutSuccessHandler(ReactiveClientRegistrationRepository clientRegistrationRepository) {
