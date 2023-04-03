@@ -27,21 +27,16 @@ public class SecurityConfig {
     ) {
         return http
                 .authorizeExchange(exchange -> exchange
-                        .pathMatchers("/", "/*.css", "/*.js", "/favicon.ico")
-                            .permitAll()
-                        .pathMatchers(HttpMethod.GET, "/books/**")
-                            .permitAll()
-                        .anyExchange()
-                            .authenticated())
+                        .pathMatchers("/", "/*.css", "/*.js", "/favicon.ico").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/books/**").permitAll()
+                        .anyExchange().authenticated())
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling.authenticationEntryPoint(
                                 new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .oauth2Login(Customizer.withDefaults())
-                .logout(logout -> logout.logoutSuccessHandler(
-                        oidcLogoutSuccessHandler(clientRegistrationRepository)))
+                .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler(clientRegistrationRepository)))
                 // Use a cookie-based strategy for exchanging CSRF tokens with the Angular frontend
-                .csrf(csrf -> csrf.csrfTokenRepository(
-                        CookieServerCsrfTokenRepository.withHttpOnlyFalse()))
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieServerCsrfTokenRepository.withHttpOnlyFalse()))
                 .build();
     }
 
